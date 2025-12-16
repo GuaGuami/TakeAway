@@ -195,13 +195,61 @@ async function renderDishesList() {
 
 /* ================= 配料参考 ================= */
 async function renderIngredientReference() {
-  const { data } = await supabaseClient.from('ingredients').select('*').order('name');
-  const ul = document.getElementById('ingredientList');
+  const { data, error } = await supabaseClient
+    .from('ingredients')
+    .select('*')
+    .order('name', { ascending: true });
 
-  ul.innerHTML = data.map(i =>
-    `<li class="list-group-item">${escapeHtml(i.name)}</li>`
-  ).join('');
+  const listContainer = document.getElementById('ingredientList');
+
+  if (error) {
+    listContainer.innerHTML = '<div class="text-danger">加载配料失败</div>';
+    return;
+  }
+
+  if (!data.length) {
+    listContainer.innerHTML = '<div>暂无配料</div>';
+    return;
+  }
+
+  let html = `
+    <table class="table table-sm table-bordered mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>名称</th>
+          <th>分类</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  data.forEach((ing, index) => {
+    html += `
+      <tr>
+        <td>${escapeHtml(ing.name)}</td>
+        <td>${escapeHtml(ing.category)}</td>
+        <td>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            data-name="${escapeHtml(ing.name)}"
+          >添加</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table>`;
+  listContainer.innerHTML = html;
+
+  // 绑定按钮事件
+  listContainer.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setupIngredientRow(btn.dataset.name);
+    });
+  });
 }
+
 
 
 
